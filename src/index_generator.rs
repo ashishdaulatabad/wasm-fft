@@ -1,3 +1,7 @@
+/// Utility struct to generate indexes for performing
+/// FFT on generalized size.
+///
+/// On odd sizes, perform DFT, otherwise FFT
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct IndexGen {
     len: usize,
