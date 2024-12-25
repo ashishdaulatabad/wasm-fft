@@ -393,9 +393,9 @@ pub fn radx4ifft(array: &[f32], lookup_table: &[f32]) -> Vec<f32> {
             out[(rev_index << 1) + 1] = chunk[1];
         });
 
-    radx4i_merge_2_4(&mut out);
+    // radx4i_merge_2_4(&mut out);
 
-    let (mut block_size, mut length_check_lookup) = (8, length >> 3);
+    let (mut block_size, mut length_check_lookup) = (2, length >> 1);
 
     while block_size <= length {
         if (block_size << 1) <= length {
@@ -564,7 +564,7 @@ mod test {
     use super::*;
     #[test]
     fn test_radx4_merge_2_4() -> Result<(), Box<dyn std::error::Error>> {
-        let mut vec: Vec<f32> = (0..128).map(|c| c as f32).collect();
+        let mut vec: Vec<f32> = (0..16).map(|c| c as f32).collect();
         let lt = generate_lookup_table(vec.len());
 
         let t = std::time::Instant::now();
@@ -576,7 +576,7 @@ mod test {
         let iff = radx4ifft(&fft_rdx_vec, &lt);
 
         // assert!(iff.iter().zip(iff_v.iter()).all(|(f, s)| ((*f / *s).abs() - 1.0).abs() <= 1e-6));
-        // println!("{:?}\n\n{:?}", iff_v, iff);
+        println!("{:?}\n\n{:?}", iff_v, iff);
 
         Ok(())
     }
