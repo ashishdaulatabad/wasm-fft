@@ -360,10 +360,10 @@ pub fn radx4fft(array: &[f32], lookup_table: &[f32]) -> Vec<f32> {
             x[0] = element;
         });
 
-    radx4_merge_2_4(&mut out);
+    // radx4_merge_2_4(&mut out);
 
     let (mut block_size, length, mut length_check_lookup) =
-        (8, array.len(), array.len() >> 3);
+        (2, array.len(), array.len() >> 1);
 
     while block_size <= length {
         if (block_size << 1) <= length {
