@@ -1,8 +1,7 @@
-mod fft_simd;
+pub mod fft_simd;
 mod index_generator;
 use crate::index_generator::IndexGen;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen_test::console_log;
 
 /// Create a lookup table for faster FFT computation
 #[wasm_bindgen]
