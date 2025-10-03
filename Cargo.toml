@@ -12,8 +12,14 @@ wasm = []
 [profile.dev]
 opt-level = 2
 
+[profile.test]
+opt-level = 2
+
 [dependencies]
 wasm-bindgen = "0.2.84"
+wasm-bindgen-test = "0.3.49"
+web-sys = "0.3.81"
+web-time = "1.1.0"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.49"
