@@ -391,11 +391,9 @@ pub fn fft_simd(input: &[f32], lookup_table: &CArray) -> CArray {
   });
   unsafe {
     merge_2(&mut output);
-    // console_log!("After merge_2: {:?}", output);
     // Placeholder for the actual FFT implementation
     // (This is where you would implement the FFT algorithm)
     merge_4(&mut output);
-    // console_log!("After merge_4: {:?}", output);
 
     let (mut block_size, length, mut length_check_lookup) =
       (8, len, output.r.len() >> 3);
@@ -428,9 +426,7 @@ pub fn ifft_simd(input: &CArray, lookup_table: &CArray) -> Vec<f32> {
 
     // Works the same as fft_simd
     merge_2(&mut output);
-    // console_log!("After merge_2: {:?}", output);
     merge_inverse_4(&mut output);
-    // console_log!("After merge_4: {:?}", output);
 
     let (mut block_size, length, mut length_check_lookup) =
       (8, len, output.r.len() >> 3);
@@ -468,24 +464,17 @@ fn test_fft_simd() {
 
   let other_lookup_table = generate_lookup_table(size);
   let input: Vec<f32> = (0..size).map(|x| x as f32).collect();
-  // console_log!("Input: {:?}", input);
 
   // Implement radx4fft simd.
   let t = web_time::Instant::now();
   let result = fft_simd(&input, &lookup_table);
   let _inv = ifft_simd(&result, &lookup_table);
   let elapsed = t.elapsed();
-  console_log!("SIMD FFT + IFFT Time: {:?}", elapsed.as_nanos());
-  // console_log!("Inv: {:?}", _inv);
 
   let t = web_time::Instant::now();
   let other_fft = radx4fft(&input, &other_lookup_table);
   let _other_ifft = radx4ifft(&other_fft, &other_lookup_table);
   let elapsed = t.elapsed();
-  console_log!("Other FFT + IFFT Time: {:?}", elapsed.as_nanos());
-
-  // console_log!("SIMD FFT Result: {:?}", _inv);
-  // console_log!("Other FFT Result: {:?}", _other_ifft);
   // assert!(1 == 2);
 
   // _inv.iter().zip(_other_ifft.iter()).for_each(|(a, b)| {

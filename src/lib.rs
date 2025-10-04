@@ -509,9 +509,6 @@ mod test {
     let fft_rdx_vec = radx4fft(&vec, &lt);
     let iff = radx4ifft(&fft_rdx_vec, &lt);
 
-    // assert!(iff.iter().zip(iff_v.iter()).all(|(f, s)| ((*f / *s).abs() - 1.0).abs() <= 1e-6));
-    println!("{:?}\n\n{:?}", iff_v, iff);
-
     Ok(())
   }
 }
