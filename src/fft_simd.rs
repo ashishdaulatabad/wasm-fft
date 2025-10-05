@@ -413,7 +413,27 @@ pub fn fft_simd(input: &[f32], lookup_table: &CArray) -> CArray {
   let len = input.len();
   let mut output = CArray::new(len);
 
-  fft_simd_inplace(input, lookup_table, &mut output);
+  let index_iter: IndexGen = IndexGen::new(len);
+
+  output.r.iter_mut().zip(index_iter).for_each(|(r, index)| {
+    *r = input[index];
+  });
+  unsafe {
+    merge_2(&mut output);
+    // Placeholder for the actual FFT implementation
+    // (This is where you would implement the FFT algorithm)
+    merge_4(&mut output);
+
+    let (mut block_size, length, mut length_check_lookup) =
+      (8, len, output.r.len() >> 3);
+
+    while block_size <= length {
+      merge_n(&mut output, lookup_table, block_size, length_check_lookup);
+      block_size <<= 1;
+      length_check_lookup >>= 1;
+    }
+  }
+
   output
 }
 
@@ -456,8 +476,34 @@ pub fn ifft_simd_inplace(
 pub fn ifft_simd(input: &CArray, lookup_table: &CArray) -> Vec<f32> {
   let len = input.r.len();
   let mut output = CArray::new(len);
+  let index_iter: IndexGen = IndexGen::new(len);
 
-  ifft_simd_inplace(input, lookup_table, &mut output);
+  output.r.iter_mut().zip(index_iter).enumerate().for_each(
+    |(i, (r, index))| {
+      *r = input.r[index];
+      output.i[index] = input.i[i];
+    },
+  );
+
+  unsafe {
+    // Works the same as fft_simd
+    merge_2(&mut output);
+    merge_inverse_4(&mut output);
+
+    let (mut block_size, length, mut length_check_lookup) =
+      (8, len, output.r.len() >> 3);
+
+    // Placeholder for the actual FFT implementation
+    // (This is where you would implement the FFT algorithm)
+    while block_size <= length {
+      merge_inverse_n(&mut output, lookup_table, block_size, length_check_lookup);
+      block_size <<= 1;
+      length_check_lookup >>= 1;
+    }
+  }
+
+  // FFT imaginary part should be negated
+  output.r.iter_mut().for_each(|r| *r /= len as f32);
   output.r
 }
 
