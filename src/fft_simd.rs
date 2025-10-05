@@ -380,39 +380,48 @@ pub unsafe fn merge_inverse_n(
     });
 }
 
-pub fn fft_simd(input: &[f32], lookup_table: &CArray) -> CArray {
+pub fn fft_simd_inplace(
+  input: &[f32],
+  lookup_table: &CArray,
+  output: &mut CArray,
+) {
   let len = input.len();
-  let mut output = CArray::new(len);
-
   let index_iter: IndexGen = IndexGen::new(len);
 
   output.r.iter_mut().zip(index_iter).for_each(|(r, index)| {
     *r = input[index];
   });
   unsafe {
-    merge_2(&mut output);
+    merge_2(output);
     // Placeholder for the actual FFT implementation
     // (This is where you would implement the FFT algorithm)
-    merge_4(&mut output);
+    merge_4(output);
 
     let (mut block_size, length, mut length_check_lookup) =
       (8, len, output.r.len() >> 3);
 
     while block_size <= length {
-      merge_n(&mut output, lookup_table, block_size, length_check_lookup);
+      merge_n(output, lookup_table, block_size, length_check_lookup);
       block_size <<= 1;
       length_check_lookup >>= 1;
     }
   }
+}
 
-  // FFT imaginary part should be negated
+pub fn fft_simd(input: &[f32], lookup_table: &CArray) -> CArray {
+  let len = input.len();
+  let mut output = CArray::new(len);
+
+  fft_simd_inplace(input, lookup_table, &mut output);
   output
 }
 
-pub fn ifft_simd(input: &CArray, lookup_table: &CArray) -> Vec<f32> {
+pub fn ifft_simd_inplace(
+  input: &CArray,
+  lookup_table: &CArray,
+  output: &mut CArray,
+) {
   let len = input.r.len();
-  let mut output = CArray::new(len);
-
   let index_iter: IndexGen = IndexGen::new(len);
 
   output.r.iter_mut().zip(index_iter).enumerate().for_each(
@@ -423,10 +432,9 @@ pub fn ifft_simd(input: &CArray, lookup_table: &CArray) -> Vec<f32> {
   );
 
   unsafe {
-
     // Works the same as fft_simd
-    merge_2(&mut output);
-    merge_inverse_4(&mut output);
+    merge_2(output);
+    merge_inverse_4(output);
 
     let (mut block_size, length, mut length_check_lookup) =
       (8, len, output.r.len() >> 3);
@@ -434,7 +442,7 @@ pub fn ifft_simd(input: &CArray, lookup_table: &CArray) -> Vec<f32> {
     // Placeholder for the actual FFT implementation
     // (This is where you would implement the FFT algorithm)
     while block_size <= length {
-      merge_inverse_n(&mut output, lookup_table, block_size, length_check_lookup);
+      merge_inverse_n(output, lookup_table, block_size, length_check_lookup);
       block_size <<= 1;
       length_check_lookup >>= 1;
     }
@@ -442,13 +450,20 @@ pub fn ifft_simd(input: &CArray, lookup_table: &CArray) -> Vec<f32> {
 
   // FFT imaginary part should be negated
   output.r.iter_mut().for_each(|r| *r /= len as f32);
+}
+
+pub fn ifft_simd(input: &CArray, lookup_table: &CArray) -> Vec<f32> {
+  let len = input.r.len();
+  let mut output = CArray::new(len);
+
+  ifft_simd_inplace(input, lookup_table, &mut output);
   output.r
 }
 
 #[wasm_bindgen_test]
 fn test_fft_simd() {
   #[cfg(target_arch = "wasm32")]
-  use crate::{generate_lookup_table, radx4fft, radx4ifft};
+  use crate::{generate_lookup_table, radx4fft};
 
   let size = 8192;
   let s_f32 = size as f32;
@@ -467,15 +482,27 @@ fn test_fft_simd() {
 
   // Implement radx4fft simd.
   let t = web_time::Instant::now();
+  let mut c = 0;
+  while t.elapsed().as_secs_f32() < 1.0 {
+    let result = fft_simd(&input, &lookup_table);
+    c += 1;
+  }
+  console_log!("FFT SIMD iterations in 1 second: {}", c);
+
   let result = fft_simd(&input, &lookup_table);
-  let _inv = ifft_simd(&result, &lookup_table);
-  let elapsed = t.elapsed();
 
   let t = web_time::Instant::now();
-  let other_fft = radx4fft(&input, &other_lookup_table);
-  let _other_ifft = radx4ifft(&other_fft, &other_lookup_table);
+  c = 0;
+
+  while t.elapsed().as_secs_f32() < 1.0 {
+    let _inv = radx4fft(&input, &other_lookup_table);
+    c += 1;
+  }
+  console_log!("FFT Other iterations in 1 second: {}", c);
+  // let other_fft = radx4fft(&input, &other_lookup_table);
+  // let _other_ifft = radx4ifft(&other_fft, &other_lookup_table);
   let elapsed = t.elapsed();
-  // assert!(1 == 2);
+  assert!(1 == 2);
 
   // _inv.iter().zip(_other_ifft.iter()).for_each(|(a, b)| {
   //   let diff = (a - b).abs();
