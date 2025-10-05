@@ -387,6 +387,7 @@ pub fn fft_simd_inplace(
 ) {
   let len = input.len();
   let index_iter: IndexGen = IndexGen::new(len);
+  output.i.fill(0);
 
   output.r.iter_mut().zip(index_iter).for_each(|(r, index)| {
     *r = input[index];
